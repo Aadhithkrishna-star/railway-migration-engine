@@ -1,0 +1,52 @@
+{
+  "version": 2,
+  "services": {
+    "migration-backend": {
+      "name": "Migration Core Engine",
+      "source": {
+        "root": "backend"
+      },
+      "build": {
+        "builder": "NIXPACKS"
+      },
+      "deploy": {
+        "numReplicas": 1
+      },
+      "variables": {
+        "PORT": "8000"
+      }
+    },
+    "migration-frontend": {
+      "name": "Dashboard Interface",
+      "source": {
+        "root": "frontend"
+      },
+      "build": {
+        "builder": "NIXPACKS"
+      },
+      "interfaces": [
+        {
+          "name": "web",
+          "port": 80
+        }
+      ],
+      "variables": {
+        "BACKEND_PRIVATE_URL": "http://${{ migration-backend.RAILWAY_PRIVATE_DOMAIN }}:8000"
+      }
+    },
+    "migration-db": {
+      "name": "Analytics Cache",
+      "image": "postgres:15",
+      "interfaces": [
+        {
+          "name": "postgres",
+          "port": 5432
+        }
+      ],
+      "variables": {
+        "POSTGRES_DB": "railway_cache",
+        "POSTGRES_PASSWORD": "${{ secrets.DB_PASSWORD }}"
+      }
+    }
+  }
+}

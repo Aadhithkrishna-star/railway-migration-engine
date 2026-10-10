@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Migration Engine Dashboard</title>
+    <!-- Tailwind CSS for sleek UI styling -->
+    <script src="https://tailwindcss.com"></script>
+    <style>
+        body { background-color: #0b0c10; color: #e5e7eb; font-family: system-ui, -apple-system, sans-serif; }
+        .railway-purple { color: #af40ff; }
+        .railway-bg-purple { background-color: #af40ff; }
+        .card-dark { background-color: #13151a; border: 1px solid #22252e; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-6">
+
+    <!-- Header Section -->
+    <header class="max-w-4xl w-full mx-auto flex justify-between items-center py-4 border-b border-gray-800">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl font-black tracking-tight railway-purple">RAILWAY</span>
+            <span class="text-sm font-semibold px-2 py-0.5 rounded bg-gray-800 text-gray-400">MIGRATOR v1.0</span>
+        </div>
+        <a href="https://github.com" target="_blank" class="text-sm text-gray-400 hover:text-white transition">View on GitHub</a>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="max-w-4xl w-full mx-auto flex-grow flex flex-col justify-center my-12">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold tracking-tight mb-3">Convert Legacy Repos to Railway</h1>
+            <p class="text-gray-400 max-w-xl mx-auto text-base">
+                Paste any public GitHub repository link below. Our engine analyzes the application code, detects internal dependencies, and spits out a ready-to-deploy multi-service blueprint.
+            </p>
+        </div>
+
+        <!-- Input Bar Section -->
+        <div class="card-dark p-4 rounded-xl shadow-2xl flex items-center space-x-3 mb-8">
+            <input 
+                type="text" 
+                id="repoUrl" 
+                placeholder="https://github.com" 
+                class="w-full bg-transparent px-3 py-2 text-white border border-gray-800 rounded-lg focus:outline-none focus:border-purple-500 transition placeholder-gray-600 text-sm"
+            />
+            <button 
+                onclick="runMigrationAnalysis()" 
+                class="railway-bg-purple hover:bg-purple-600 text-white font-medium text-sm px-6 py-3 rounded-lg transition active:scale-95 whitespace-nowrap shadow-lg shadow-purple-500/20"
+            >
+                Analyze Stack
+            </button>
+        </div>
+
+        <!-- Loading State Spinner -->
+        <div id="loader" class="hidden text-center my-8">
+            <div class="animate-spin inline-block w-8 h-8 border-4 border-current border-t-transparent text-purple-500 rounded-full" role="status"></div>
+            <p class="text-xs text-gray-500 mt-2 tracking-wide uppercase">Cloning and parsing repository files...</p>
+        </div>
+
+        <!-- Results Window (Hidden by Default) -->
+        <div id="resultWindow" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
+            
+            <!-- Left Panel: Infrastructure Blueprint Metrics -->
+            <div class="md:col-span-1 space-y-4">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500">Detected System Map</h3>
+                
+                <div class="card-dark p-5 rounded-xl flex items-center space-x-4">
+                    <div class="p-3 bg-blue-500/10 rounded-lg text-blue-400 font-bold text-xl">🚀</div>
+                    <div>
+                        <div class="text-xs text-gray-500 font-medium">Framework Stack</div>
+                        <div id="detectedFramework" class="font-bold text-white capitalize">-</div>
+                    </div>
+                </div>
+
+                <div class="card-dark p-5 rounded-xl flex items-center space-x-4">
+                    <div class="p-3 bg-green-500/10 rounded-lg text-green-400 font-bold text-xl">🛢️</div>
+                    <div>
+                        <div class="text-xs text-gray-500 font-medium">Required Plugin</div>
+                        <div id="detectedDatabase" class="font-bold text-white capitalize">None Detected</div>
+                    </div>
+                </div>
+
+                <div class="card-dark p-5 rounded-xl flex items-center space-x-4">
+                    <div class="p-3 bg-yellow-500/10 rounded-lg text-yellow-400 font-bold text-xl">🛠️</div>
+                    <div>
+                        <div class="text-xs text-gray-500 font-medium">Build Engine</div>
+                        <div id="detectedBuilder" class="font-bold text-white uppercase">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Generated template.json Code Output -->
+            <div class="md:col-span-2 flex flex-col">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Generated Railway Blueprint</h3>
+                <div class="card-dark rounded-xl p-4 flex-grow relative overflow-hidden">
+                    <pre class="text-xs text-emerald-400 font-mono overflow-x-auto max-h-[320px] p-2" id="jsonOutput">
+                    </pre>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer Segment -->
+    <footer class="text-center text-xs text-gray-600 py-6 border-t border-gray-900 max-w-4xl w-full mx-auto">
+        Built for the Railway Senior DevRel Application Showcase. Remote First.
+    </footer>
+
+    <!-- Main Front-to-Back Integration JavaScript Loop -->
+    <script>
+        async function runMigrationAnalysis() {
+            const urlInput = document.getElementById('repoUrl').value.trim();
+            const loader = document.getElementById('loader');
+            const resultWindow = document.getElementById('resultWindow');
+
+            if (!urlInput) {
+                alert('Please provide a valid GitHub repository URL.');
+                return;
+            }
+
+            // UI Reset States
+            loader.classList.remove('hidden');
+            resultWindow.classList.add('hidden');
+
+            try {
+                // Pointing to your local python fastAPI backend environment 
+                const response = await fetch('http://localhost:8000/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ github_url: urlInput })
+                });
+
+                if (!response.ok) throw new Error('Analysis processing failed.');
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Injecting analytical outputs from Python Engine straight to Dashboard UI
+                    document.getElementById('detectedFramework').innerText = data.detected_stack.framework;
+                    document.getElementById('detectedDatabase').innerText = data.detected_stack.database_required || 'None Needed';
+                    document.getElementById('detectedBuilder').innerText = data.detected_stack.has_docker ? 'Dockerfile' : 'Nixpacks';
+                    
+                    document.getElementById('jsonOutput').innerText = JSON.stringify(data.railway_blueprint, null, 4);
+                    
+                    loader.classList.add('hidden');
+                    resultWindow.classList.remove('hidden');
+                }
+            } catch (err) {
+                loader.classList.add('hidden');
+                alert('Engine Connection Error: Ensure your Python server is running on port 8000.');
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>
