@@ -2,7 +2,7 @@
 
 A production-grade, multi-service automation tool built to eliminate the manual friction of migrating legacy application architecture (from platforms like Heroku or Render) directly onto Railway.
 
-[![Deploy on Railway](https://railway.com)](https://railway.com)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com)
 
 ---
 
